@@ -1,4 +1,6 @@
 #!/bin/bash
+
+#要安装的软件包列表
 packages_to_install=(
     "ssh"
     "git"
@@ -15,14 +17,79 @@ packages_to_install=(
     "python3-dev"
     "curl"
 )
+#设置Git用户名和邮箱
+#Git_User_Name="SkybowAlexandra"
+#Git_User_Email="1973659295@qq.com"
+Git_User_Name=""
+Git_User_Email=""
+
+
+#开源仓库地址
+Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
+Vimplus_Repo="https://github.com/shinlw/vimplus.git"
+
+
+
+
+
+
+
 
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
-Instail_Packages()
+
+
+function log() 
+{
+    echo -e "\e[32m$@\e[0m"
+}
+
+function err()
+{
+    echo -e "\e[31m$@ \e[0m " >&2
+}
+
+function wrn()
+{
+    echo -e "\033[33m$@\033[0m"
+}
+
+function Set_Git_User_And_Email()
+{
+    # 检查Git_User_Name是否为空
+    if [ -z "$Git_User_Name" ]; then
+        wrn "Git User Name is not set...."
+        return $EXIT_FAILURE
+    fi
+    # 检查Git_User_Email是否为空
+    if [ -z "$Git_User_Email" ]; then
+        wrn "Git User Email is not set..."
+        return $EXIT_FAILURE
+    fi
+    #设置git用户和邮箱
+    git config --global user.name $Git_User_Name
+    if [ $? -ne 0 ]; then
+        return $EXIT_FAILURE
+    fi
+    git config --global user.email $Git_User_Email
+    if [ $? -ne 0 ]; then
+        return $EXIT_FAILURE
+    fi
+
+
+    return $EXIT_SUCCESS
+
+}
+
+
+
+
+function Instail_Packages()
 {
     apt install -y "${packages_to_install[@]}"
 }
+
 
 # 检查版本号是否大于22
 function Check_Ubuntu_Version()
@@ -34,18 +101,6 @@ function Check_Ubuntu_Version()
     else
         return 1
     fi
-}
-
-log() 
-{
-    local message="$1"
-    echo -e "\e[32m$message\e[0m"
-}
-
-err()
-{
-    local message="$1"
-    echo -e "\e[31m$message \e[0m " >&2
 }
 
 
@@ -64,11 +119,25 @@ main()
         err "The ubuntu version must be greater than 22..."
         exit $EXIT_FAILURE
     fi
+    #1.更新系统
+    #apt update -y
+    #apt upgrade -y
+    #2.安装软件包
+    #Instail_Packages
 
-    apt update -y
-    apt upgrade -y
-    #安装软件包
-    Instail_Packages
+    #3.设置Git信息
+    #Set_Git_User_And_Email
+    #if [ "$?" -eq 0 ]; then
+    #    log "Set Git User Name and Email Success..."
+    #else
+    #    wrn "Set Git User Name and Email Failed..."
+    #    exit $EXIT_FAILURE
+    #fi
+    #4.创建目录
+    mkdir ~/Softwares
+    mkdir ~/Projcts
+
+
 
     exit $EXIT_SUCCESS
 }
