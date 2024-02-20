@@ -18,17 +18,23 @@ packages_to_install=(
     "curl"
 )
 #设置Git用户名和邮箱
-#Git_User_Name="SkybowAlexandra"
-#Git_User_Email="1973659295@qq.com"
-Git_User_Name=""
-Git_User_Email=""
+Git_User_Name="SkybowAlexandra"
+Git_User_Email="1973659295@qq.com"
+#Git_User_Name=""
+#Git_User_Email=""
 
 
 #开源仓库地址
 Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
 Vimplus_Repo="https://github.com/shinlw/vimplus.git"
+gcc13_Repo="https://github.com/gcc-mirror/gcc.git"
+gdb_Repo="https://github.com/gdb-mirror/gdb.git"
 
 
+#安装gcc13需要更新GLIBCXX_3.4.32
+#sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+#sudo apt-get update
+#sudo apt-get install --only-upgrade libstdc++6
 
 
 
@@ -87,7 +93,7 @@ function Set_Git_User_And_Email()
 
 function Instail_Packages()
 {
-    apt install -y "${packages_to_install[@]}"
+    sudo apt install -y "${packages_to_install[@]}"
 }
 
 
@@ -107,39 +113,50 @@ function Check_Ubuntu_Version()
 
 main()
 {
-    if [ "$(id -u)" -ne "0" ]; then
-        sudo "$0" "$@"
-        exit $?
-    fi
 
+    #if [ "$(id -u)" -ne "0" ]; then
+    #    sudo "$0" "$user_dir"     
+    #    exit $EXIT_FAILURE
+    #fi
     Check_Ubuntu_Version
+
+    sudo apt update
+    sudo apt upgrade
+
     if [ "$?" -eq 0 ]; then
         log "System version check passed..."
     else
         err "The ubuntu version must be greater than 22..."
         exit $EXIT_FAILURE
     fi
-    #1.更新系统
-    #apt update -y
-    #apt upgrade -y
-    #2.安装软件包
-    #Instail_Packages
 
+    #2.安装软件包
+    Instail_Packages
+#
     #3.设置Git信息
-    #Set_Git_User_And_Email
-    #if [ "$?" -eq 0 ]; then
-    #    log "Set Git User Name and Email Success..."
-    #else
-    #    wrn "Set Git User Name and Email Failed..."
-    #    exit $EXIT_FAILURE
-    #fi
+    Set_Git_User_And_Email
+    if [ "$?" -eq 0 ]; then
+        log "Set Git User Name and Email Success..."
+    else
+        wrn "Set Git User Name and Email Failed..."
+        exit $EXIT_FAILURE
+    fi
+
     #4.创建目录
-    mkdir ~/Softwares
-    mkdir ~/Projcts
+    if [ ! -d ~/Softwares ]; then
+        mkdir ~/Softwares
+    fi
+    if [ ! -d ~/Projcts ]; then
+        mkdir ~/Projcts
+    fi
+    #5.克隆仓库
+    cd ~/Softwares
+    git clone $Vcpkg_Repo
+
 
 
 
     exit $EXIT_SUCCESS
 }
 
-main "$@"
+main
