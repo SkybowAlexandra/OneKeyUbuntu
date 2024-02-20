@@ -33,6 +33,15 @@ Git_User_Email="1973659295@qq.com"
 #Git_User_Name=""
 #Git_User_Email=""
 
+#要安装的C++库列表
+Vcpkg_Install_Package=(
+    "openssl"
+    "boost"
+    "sqlite"
+    "zlib"
+    "cpp-httplib"
+    "curl"
+)
 
 #开源仓库地址
 Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
@@ -144,6 +153,14 @@ function Set_Network_Proxy()
 
 function Install_Vcpkg()
 {
+    cd ~/Softwares
+    git clone $Vcpkg_Repo "vcpkg"
+    cd ~/Softwares/vcpkg
+    bash bootstrap-vcpkg.sh
+    for package in "${Vcpkg_Install_Package[@]}"; do
+     ./vcpkg install $package
+    done
+
     return 0
 }
 
@@ -155,17 +172,19 @@ function main()
     if [ "$?" -eq 0 ]; then
         log "Ubuntu系统版本检查通过..."
     else
-
+        log "Ubuntu系统版本检查不通过,请升级到22.04以上版本..."
+        exit $EXIT_FAILURE
     fi
+    #2.安装软件包
+    Instail_Packages
 
-    #2.设置网络代理
+    #3.设置网络代理
     Set_Network_Proxy
-    #3.更新系统
+    #4.更新系统
     sudo apt update
     sudo apt upgrade
 
-    #4.安装软件包
-    Instail_Packages
+
 
     #5.设置Git信息
     Set_Git_User_And_Email
@@ -184,9 +203,7 @@ function main()
         mkdir ~/Projcts
     fi
     #5.克隆仓库
-    cd ~/Softwares
-    git clone $Vcpkg_Repo "vcpkg"
-
+    Install_Vcpkg
 
 
 
