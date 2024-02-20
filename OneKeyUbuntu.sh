@@ -36,8 +36,9 @@ Git_User_Email="1973659295@qq.com"
 #要安装的C++库列表
 Vcpkg_Install_Package=(
     "openssl"
-    "boost"
-    "sqlite"
+    "sqlite3"
+    "jsoncpp"
+    "opencv"
     "zlib"
     "cpp-httplib"
     "curl"
@@ -47,7 +48,7 @@ Vcpkg_Install_Package=(
 Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
 Vimplus_Repo="https://github.com/shinlw/vimplus.git"
 gcc13_Repo="https://github.com/gcc-mirror/gcc.git"
-gdb_Repo="https://github.com/gdb-mirror/gdb.git"
+Cmake_Repo="https://github.com/Kitware/CMake.git"
 
 
 #安装gcc13需要更新GLIBCXX_3.4.32
@@ -63,7 +64,7 @@ gdb_Repo="https://github.com/gdb-mirror/gdb.git"
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
-
+Script_dir=$(pwd)
 
 function log() 
 {
@@ -153,20 +154,37 @@ function Set_Network_Proxy()
 
 function Install_Vcpkg()
 {
+    sudo apt install pkg-config
     cd ~/Softwares
-    git clone $Vcpkg_Repo "vcpkg"
+    if [ -d "vcpkg" ]; then
+        log "vcpkg目录存在"
+        cd ~/Softwares/vcpkg
+        git pull
+    else
+        log "vcpkg目录不存在"
+        git clone $Vcpkg_Repo "vcpkg"
+    fi
     cd ~/Softwares/vcpkg
     bash bootstrap-vcpkg.sh
-    for package in "${Vcpkg_Install_Package[@]}"; do
-     ./vcpkg install $package
-    done
 
+    for package in "${Vcpkg_Install_Package[@]}"; do
+    ./vcpkg install $package >> $Script_dir/vcpkg_install.log 2>&1
+    done
+    
     return 0
+}
+cleanup() {
+    err "强制结束脚本..."
+    # 在这里添加任何你想要执行的清理操作
+    exit $EXIT_FAILURE
 }
 
 
 function main()
 {
+    # 设置捕获 Ctrl+C 信号的处理函数
+    trap cleanup SIGINT
+    
     #1.检查系统
     Check_Ubuntu_Version
     if [ "$?" -eq 0 ]; then
