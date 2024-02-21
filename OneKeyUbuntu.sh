@@ -5,7 +5,7 @@ http_proxy=http://192.168.1.2:7890
 proxy_ip=${http_proxy#http://}  # 移除"http://"
 proxy_ip=${proxy_ip%%:*}        # 截取冒号":"之前的部分，即IP地址
 proxy_port=${http_proxy##*:}    # 截取冒号":"之后的部分，即端口号
-# 输出IP地址和端口
+# 输出代理IP地址和端口
 echo "代理IP地址: $proxy_ip"
 echo "代理端口: $proxy_port"
 
@@ -25,6 +25,7 @@ packages_to_install=(
     "python3"
     "python3-dev"
     "curl"
+    "manpages-zh"
 )
 #设置Git用户名和邮箱
 Git_User_Name="SkybowAlexandra"
@@ -57,10 +58,7 @@ Cmake_Repo="https://github.com/Kitware/CMake.git"
 #sudo apt-get install --only-upgrade libstdc++6
 
 
-
-
-
-
+#脚本退出标志位
 EXIT_SUCCESS=0
 EXIT_FAILURE=1
 
@@ -153,24 +151,30 @@ function Set_Network_Proxy()
 }
 
 function Install_Vcpkg()
-{
-    sudo apt install pkg-config
-    cd ~/Softwares
+{   
+    #安装依赖
+    sudo apt install -y pkg-config autoconf
+    # 进入软件目录
+    cd ~/Softwares || return 1
+    # 如果 vcpkg 目录已经存在，则更新代码，否则克隆代码
     if [ -d "vcpkg" ]; then
         log "vcpkg目录存在"
-        cd ~/Softwares/vcpkg
-        git pull
+        cd vcpkg || return 1
+        git pull || return 1
     else
         log "vcpkg目录不存在"
-        git clone $Vcpkg_Repo "vcpkg"
+        git clone "$Vcpkg_Repo" "vcpkg" || return 1
+        cd vcpkg || return 1
     fi
-    cd ~/Softwares/vcpkg
-    bash bootstrap-vcpkg.sh
+    #启动 vcpkg 安装
+    # bash bootstrap-vcpkg.sh || return 1
 
+    # 安装指定的包，并记录日志
     for package in "${Vcpkg_Install_Package[@]}"; do
-    ./vcpkg install $package >> $Script_dir/vcpkg_install.log 2>&1
+        ./vcpkg install "$package" >> "$Script_dir/vcpkg_install.log" 2>&1 || {
+            err "安装 $package 失败"
+        }
     done
-    
     return 0
 }
 cleanup() {
