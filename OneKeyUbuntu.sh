@@ -167,11 +167,10 @@ function Install_Vcpkg()
         cd vcpkg || return 1
     fi
     #启动 vcpkg 安装
-    # bash bootstrap-vcpkg.sh || return 1
-
+    ./bootstrap-vcpkg.sh || return 1
     # 安装指定的包，并记录日志
     for package in "${Vcpkg_Install_Package[@]}"; do
-        ./vcpkg install "$package" >> "$Script_dir/vcpkg_install.log" 2>&1 || {
+        ./vcpkg install "$package" | tee "$Script_dir/vcpkg_install.log" || {
             err "安装 $package 失败"
         }
     done
@@ -228,7 +227,7 @@ function main()
     Install_Vcpkg
 
 
-
+    log "一键安装Ubuntu环境”脚本执行完毕..."
     exit $EXIT_SUCCESS
 }
 
