@@ -37,18 +37,22 @@ Git_User_Email="1973659295@qq.com"
 #要安装的C++库列表
 Vcpkg_Install_Package=(
     "openssl"
-    "sqlite3"
-    "jsoncpp"
-    "opencv"
-    "zlib"
-    "cpp-httplib"
-    "curl"
+    #"sqlite3"
+    #"jsoncpp"
+    #"opencv"
+    #"zlib"
+    #"cpp-httplib"
+    #"curl"
 )
 
 #开源仓库地址
+#vcpkg
 Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
-Vimplus_Repo="https://github.com/shinlw/vimplus.git"
+#vimplus
+Vimplus_Repo="https://github.com/SkybowAlexandra/vimplus.git"
+#gcc13 支持C++20
 gcc13_Repo="https://github.com/gcc-mirror/gcc.git"
+#cmake 最新版本
 Cmake_Repo="https://github.com/Kitware/CMake.git"
 
 
@@ -176,6 +180,24 @@ function Install_Vcpkg()
     done
     return 0
 }
+function Install_Vimplus()
+{
+    cd ~/Softwares || return 1
+    if [ -d "vimplus" ]; then
+        log "vimplus目录存在"
+        cd vimplus || return 1
+        git pull || return 1
+    else
+        log "vimplus目录不存在"
+        git clone "$Vimplus_Repo" "vimplus" || return 1
+        cd vimplus || return 1
+    fi
+    #启动vimplus安装脚本 
+    ./install.sh || return 1
+
+}
+
+
 cleanup() {
     err "强制结束脚本..."
     # 在这里添加任何你想要执行的清理操作
@@ -223,9 +245,10 @@ function main()
     if [ ! -d ~/Projcts ]; then
         mkdir ~/Projcts
     fi
-    #5.克隆仓库
+    #5.安装vcpkg
     Install_Vcpkg
-
+    #6.安装vimplus
+    nstall_Vimplus
 
     log "一键安装Ubuntu环境”脚本执行完毕..."
     exit $EXIT_SUCCESS
