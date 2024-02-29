@@ -1,6 +1,6 @@
 #!/bin/bash
 #代理ip
-http_proxy=http://192.168.1.2:7890
+http_proxy=http://192.168.3.230:7890
 
 proxy_ip=${http_proxy#http://}  # 移除"http://"
 proxy_ip=${proxy_ip%%:*}        # 截取冒号":"之前的部分，即IP地址
@@ -176,6 +176,7 @@ function Install_Vcpkg()
     for package in "${Vcpkg_Install_Package[@]}"; do
         ./vcpkg install "$package" | tee "$Script_dir/vcpkg_install.log" || {
             err "安装 $package 失败"
+            return 1
         }
     done
     return 0
@@ -224,8 +225,8 @@ function main()
     #3.设置网络代理
     Set_Network_Proxy
     #4.更新系统
-    sudo apt update
-    sudo apt upgrade
+    sudo apt update -y
+    sudo apt upgrade -y 
 
 
 
@@ -247,8 +248,24 @@ function main()
     fi
     #5.安装vcpkg
     Install_Vcpkg
+    if [ $? -eq 0 ]; then
+        log "安装vcpkg成功..."
+    else
+        wrn "安装vcpkg失败..."
+        exit $EXIT_FAILURE
+    fi
     #6.安装vimplus
-    nstall_Vimplus
+    Install_Vimplus
+    if [ $? -eq 0 ]; then
+        log "安装vimplus成功..."
+    else
+        wrn "安装vimplus失败..." 
+    fi
+
+
+
+
+
 
     log "一键安装Ubuntu环境”脚本执行完毕..."
     exit $EXIT_SUCCESS
