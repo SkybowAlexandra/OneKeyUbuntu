@@ -50,8 +50,7 @@ Vcpkg_Install_Package=(
 Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
 #vimplus
 Vimplus_Repo="https://github.com/SkybowAlexandra/vimplus.git"
-#gcc13 支持C++20
-gcc13_Repo="https://github.com/gcc-mirror/gcc.git"
+
 #cmake 最新版本
 Cmake_Repo="https://github.com/Kitware/CMake.git"
 
@@ -59,6 +58,7 @@ Cmake_Repo="https://github.com/Kitware/CMake.git"
 #安装gcc13需要更新GLIBCXX_3.4.32
 #sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 #sudo apt-get update
+#sudo apt install gcc-13
 #sudo apt-get install --only-upgrade libstdc++6
 
 
@@ -197,9 +197,36 @@ function Install_Vimplus()
     ./install.sh || return 1
 
 }
+function Install_gcc13()
+{
+    #源码构建还是仓库拉取
+    log "是否使用源码构建GCC-13? (y/n)"
+    read -r -p "请输入(y/n): " choice
+    choice=${choice:-"n"}
+    log $choice 
+    if [ "$choice" == "y" ]; then
+        log "使用源码构建GCC-13..."
+        cd ~/Softwares || return 1
+        #wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
+        unpacked_directory=$(tar -zxvf gcc-13.2.0.tar.gz | head -n 1 | sed -e 's@/.*@@' | uniq)
+        log "解压出来的目录是: $unpacked_directory"
+    else
+        log "使用仓库拉取GCC-13..."
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+        sudo apt-get update
+        sudo apt install gcc-13 g++-13 -y
+        if [ $? -ne 0 ]; then
+            err "安装gcc-13失败..."
+            return 1
+        fi
+    fi
+
+    return 0
+}
 
 
-cleanup() {
+
+function cleanup() {
     err "强制结束脚本..."
     # 在这里添加任何你想要执行的清理操作
     exit $EXIT_FAILURE
@@ -271,4 +298,5 @@ function main()
     exit $EXIT_SUCCESS
 }
 
-main
+#main
+Install_gcc13
