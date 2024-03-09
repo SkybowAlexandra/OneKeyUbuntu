@@ -217,14 +217,13 @@ function Install_gcc13() {
         #make distclean
         ./configure --enable-checking=release \
                     --enable-threads=posix \
-                    --enable-languages=c,c++,go,d,fortran,objc,obj-c++,m2,rust \
+                    --enable-languages=c,c++ \
                     --disable-multilib \
                     --prefix=$install_dir \
                     --program-suffix=-13
                     
-        #make -j4
-        #sudo make install
-
+        make -j4
+        sudo make install
 
     else
         log "使用仓库拉取GCC-13..."
