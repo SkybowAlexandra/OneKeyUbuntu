@@ -206,25 +206,29 @@ function Install_gcc13() {
             log "gcc-13.2.0.tar.gz文件不存在"
             wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
         fi
-        tar -zxvf gcc-13.2.0.tar.gz
+        #tar -zxvf gcc-13.2.0.tar.gz
         unpacked_directory=$(tar -tzf gcc-13.2.0.tar.gz | head -n 1 | cut -f1 -d"/")
         log "解压出来的目录是: $unpacked_directory"
         cd "$unpacked_directory" || return 1
         #下载依赖
-        ./contrib/download_prerequisites
-        mkdir build
-        install_dir=$(pwd)/build
+        #./contrib/download_prerequisites
+        #mkdir build
+        install_dir=$(pwd)/build/bin
         #make distclean
-        ./configure --enable-checking=release \
-                    --enable-threads=posix \
-                    --enable-languages=c,c++ \
-                    --disable-multilib \
-                    --prefix=$install_dir \
-                    --program-suffix=-13
-                    
-        make -j4
-        sudo make install
-
+        #./configure --enable-checking=release \
+        #            --enable-threads=posix \
+        #            --enable-languages=c,c++ \
+        #            --disable-multilib \
+        #            --prefix=$install_dir \
+        #            --program-suffix=-13
+        #            
+        #make -j4
+        #sudo make install
+        log $install_dir
+        #添加环境变量
+        echo -e "\n# Adding $install_dir to PATH on $(date)" >> ~/.bashrc
+        echo "export PATH=\$PATH:$install_dir" >> ~/.bashrc
+        source ~/.bashrc
     else
         log "使用仓库拉取GCC-13..."
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
