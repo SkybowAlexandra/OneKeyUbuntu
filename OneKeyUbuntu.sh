@@ -1,6 +1,6 @@
 #!/bin/bash
 #代理ip
-http_proxy=http://192.168.43.137:7890
+http_proxy=http://192.168.1.10:7890
 
 proxy_ip=${http_proxy#http://} # 移除"http://"
 proxy_ip=${proxy_ip%%:*}       # 截取冒号":"之前的部分，即IP地址
@@ -250,10 +250,19 @@ function Install_Cmake()
 {
     cd ~/Softwares || return 1
     sudo apt install libssl-dev
-    #git clone "$Cmake_Repo" "cmake" || return 1
+    if [ -d "cmake" ]; then
+        log "cmake"
+        cd cmake || return 1
+        git pull || return 1
+    else
+        log "cmake"
+        git clone "$Cmake_Repo" "cmake" || return 1
+        cd cmake || return 1
+    fi
     cd ~/Softwares/cmake || return 1
     ./configure || return 1
     make -j4
+    sudo make install
 
 }
 
@@ -278,16 +287,18 @@ function main() {
         log "Ubuntu系统版本检查不通过,请升级到22.04以上版本..."
         exit $EXIT_FAILURE
     fi
+
+    #1.更新系统
+    sudo apt update -y
+    sudo apt upgrade -y
     #2.安装软件包
     Instail_Packages
 
     #3.设置网络代理
     Set_Network_Proxy
-    #4.更新系统
-    sudo apt update -y
-    sudo apt upgrade -y
 
-    #5.设置Git信息
+
+    #4.设置Git信息
     Set_Git_User_And_Email
     if [ "$?" -eq 0 ]; then
         log "设置Git用户名和邮箱成功..."
@@ -296,7 +307,7 @@ function main() {
         exit $EXIT_FAILURE
     fi
 
-    #6.创建目录
+    #5.创建目录
     if [ ! -d ~/Softwares ]; then
         mkdir ~/Softwares
     fi
@@ -319,10 +330,18 @@ function main() {
         wrn "安装vimplus失败..."
     fi
 
+    Install_Cmake
+        if [ $? -eq 0 ]; then
+        log "安装cmake成功..."
+    else
+        wrn "安装cmake失败..."
+    fi
+
     log "一键安装Ubuntu C++环境”脚本执行完毕..."
     exit $EXIT_SUCCESS
+
 }
 
 #main
-Install_Cmake
 
+Install_Cmake
