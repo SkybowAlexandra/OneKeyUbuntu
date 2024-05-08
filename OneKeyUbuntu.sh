@@ -222,7 +222,7 @@ function Install_gcc13() {
                     --prefix=$install_dir \
                     --program-suffix=-13
                     
-        make -j4
+        make -j12
         make install
         log $install_dir
         #添加环境变量
@@ -261,7 +261,7 @@ function Install_Cmake()
     fi
     cd ~/Softwares/cmake || return 1
     ./configure || return 1
-    make -j4
+    make -j12
     sudo make install
 
 }
@@ -344,4 +344,10 @@ function main() {
 
 #main
 
-Install_Cmake
+#Install_Cmake
+Install_gcc13
+
+#sudo cp libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu
+#sudo rm -rf libstdc++.so.6
+#sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#
