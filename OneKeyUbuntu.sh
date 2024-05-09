@@ -185,69 +185,75 @@ function Install_Vimplus() {
 
 }
 function Install_gcc13() {
-    #源码构建还是仓库拉取
-    log "是否使用源码构建GCC-13? (y/n)"
-    read -r -p "请输入(y/n): " choice
-    choice=${choice:-"n"}
-    log $choice
-    if [ "$choice" == "y" ]; then
-        log "使用源码构建GCC-13....."
-        sudo apt install build-essential libtool -y
-        cd ~/Softwares || return 1
-        if [ -e "./gcc-13.2.0.tar.gz" ]; then
-            #log "gcc-13.2.0.tar.gz文件存在"
-            Gcc13Md5=$(openssl sha512 gcc-13.2.0.tar.gz | awk '{print $NF}')
-            if [ $Gcc13Md5 != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
-                wrn "gcc-13.2.0.tar.gz文件校验不通过"
-                rm gcc-13.2.0.tar.gz
+
+    while true; do
+
+        #源码构建还是仓库拉取
+        log "是否使用源码构建GCC-13? (y/n)"
+        read -r -p "请输入(y/n): " choice
+        choice=${choice:-"n"}
+        log $choice
+        if [ "$choice" == "y" ] || [ "$choice" == "Y" ]; then
+            log "使用源码构建GCC-13....."
+            sudo apt install build-essential libtool -y
+            cd ~/Softwares || return 1
+            if [ -e "./gcc-13.2.0.tar.gz" ]; then
+                #log "gcc-13.2.0.tar.gz文件存在"
+                Gcc13Md5=$(openssl sha512 gcc-13.2.0.tar.gz | awk '{print $NF}')
+                if [ $Gcc13Md5 != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
+                    wrn "gcc-13.2.0.tar.gz文件校验不通过"
+                    rm gcc-13.2.0.tar.gz
+                    wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
+                fi
+            else
+                log "gcc-13.2.0.tar.gz文件不存在"
                 wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
             fi
+            tar -zxvf gcc-13.2.0.tar.gz
+            unpacked_directory=$(tar -tzf gcc-13.2.0.tar.gz | head -n 1 | cut -f1 -d"/")
+            log "解压出来的目录是: $unpacked_directory"
+            cd "$unpacked_directory" || return 1
+            #下载依赖
+            ./contrib/download_prerequisites
+            mkdir build
+            install_dir=$(pwd)/build
+            make distclean
+            ./configure --enable-checking=release \
+                --enable-threads=posix \
+                --enable-languages=c,c++ \
+                --disable-multilib \
+                --prefix=$install_dir \
+                --program-suffix=-13
+
+            #make -j12
+            #make install
+            log $install_dir
+            #添加环境变量
+            echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
+            echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
+            source ~/.bashrc
+            #更新libc++std6
+
+            return 0
+        elif [ "$choice" == "n" ] || "$choice" == "N"; then
+            #log "使用仓库拉取GCC-13..."
+            #sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            #sudo apt-get update
+            #sudo apt install gcc-13 g++-13 -y
+            #if [ $? -ne 0 ]; then
+            #    err "安装gcc-13失败..."
+            #    return 1
+            #fi
+            break;
         else
-            log "gcc-13.2.0.tar.gz文件不存在"
-            wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
+            continue;
         fi
-        tar -zxvf gcc-13.2.0.tar.gz
-        unpacked_directory=$(tar -tzf gcc-13.2.0.tar.gz | head -n 1 | cut -f1 -d"/")
-        log "解压出来的目录是: $unpacked_directory"
-        cd "$unpacked_directory" || return 1
-        #下载依赖
-        ./contrib/download_prerequisites
-        mkdir build
-        install_dir=$(pwd)/build/bin
-        make distclean
-        ./configure --enable-checking=release \
-                    --enable-threads=posix \
-                    --enable-languages=c,c++ \
-                    --disable-multilib \
-                    --prefix=$install_dir \
-                    --program-suffix=-13
-                    
-        make -j12
-        make install
-        log $install_dir
-        #添加环境变量
-        echo -e "\n# Adding $install_dir to PATH on $(date)" >> ~/.bashrc
-        echo "export PATH=\$PATH:$install_dir" >> ~/.bashrc
-        source ~/.bashrc
-        #更新libc++std6
 
-        return 0
-    else
-        log "使用仓库拉取GCC-13..."
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt install gcc-13 g++-13 -y
-        if [ $? -ne 0 ]; then
-            err "安装gcc-13失败..."
-            return 1
-        fi
-    fi
-
+    done
     return 0
 }
 
-function Install_Cmake()
-{
+function Install_Cmake() {
     cd ~/Softwares || return 1
     sudo apt install libssl-dev
     if [ -d "cmake" ]; then
@@ -265,9 +271,6 @@ function Install_Cmake()
     sudo make install
 
 }
-
-
-
 
 function cleanup() {
     err "强制结束脚本..."
@@ -296,7 +299,6 @@ function main() {
 
     #3.设置网络代理
     Set_Network_Proxy
-
 
     #4.设置Git信息
     Set_Git_User_And_Email
@@ -331,7 +333,7 @@ function main() {
     fi
 
     Install_Cmake
-        if [ $? -eq 0 ]; then
+    if [ $? -eq 0 ]; then
         log "安装cmake成功..."
     else
         wrn "安装cmake失败..."
