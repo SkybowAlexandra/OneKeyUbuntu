@@ -57,6 +57,9 @@ Vimplus_Repo="https://github.com/SkybowAlexandra/vimplus.git"
 #cmake 最新版本
 Cmake_Repo="https://github.com/Kitware/CMake.git"
 
+#gcc 下载链接
+gcc_Repo="http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz"
+
 #安装gcc13需要更新GLIBCXX_3.4.32
 #sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 #sudo apt-get update
@@ -184,6 +187,46 @@ function Install_Vimplus() {
     ./install.sh || return 1
 
 }
+
+function Install_gcc() {
+    #sudo apt install build-essential libtool -y
+    cd ~/Softwares || return 1
+    #提取文件名字
+    filename=$(basename "$gcc_Repo")
+    if [ -e "$filename" ]; then
+        #log "gcc-13.2.0.tar.gz文件存在"
+        GccMd5=$(openssl sha512 gcc-13.2.0.tar.gz | awk '{print $NF}')
+        if [ $GccMd5 != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
+            wrn "gcc-13.2.0.tar.gz文件校验SHA512校验不通过"
+            rm gcc-13.2.0.tar.gz
+            wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
+        fi
+    else
+        wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
+    fi
+    #tar -zxvf $filename || return 1
+    unpacked_directory=$(tar -tzf gcc-13.2.0.tar.gz | head -n 1 | cut -f1 -d"/")
+    #log "解压出来的目录是: $unpacked_directory"
+    cd "$unpacked_directory" || return 1
+    #./contrib/download_prerequisites
+    #mkdir build
+    install_dir=$(pwd)/build
+    #make distclean
+    #./configure --enable-checking=release \
+    #    --enable-threads=posix \
+    #    --enable-languages=c,c++ \
+    #    --disable-multilib \
+    #    --prefix=$install_dir \
+    #    --program-suffix=-13
+
+    #make -j12
+    #make install
+    echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
+    echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
+    source ~/.bashrc
+    sudo cp 
+}
+
 function Install_gcc13() {
 
     while true; do
@@ -225,8 +268,8 @@ function Install_gcc13() {
                 --prefix=$install_dir \
                 --program-suffix=-13
 
-            #make -j12
-            #make install
+            make -j12
+            make install
             log $install_dir
             #添加环境变量
             echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
@@ -244,9 +287,9 @@ function Install_gcc13() {
             #    err "安装gcc-13失败..."
             #    return 1
             #fi
-            break;
+            break
         else
-            continue;
+            continue
         fi
 
     done
@@ -347,9 +390,10 @@ function main() {
 #main
 
 #Install_Cmake
-Install_gcc13
+#Install_gcc13
 
 #sudo cp libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu
 #sudo rm -rf libstdc++.so.6
 #sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 #
+Install_gcc
