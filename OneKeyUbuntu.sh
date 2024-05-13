@@ -189,10 +189,20 @@ function Install_Vimplus() {
 }
 
 function Install_gcc() {
-    #sudo apt install build-essential libtool -y
+    sudo apt install build-essential libtool -y
     cd ~/Softwares || return 1
     #提取文件名字
     filename=$(basename "$gcc_Repo")
+    gcc_version=$(echo "$filename" | cut -d '.' -f 1 | cut -d '-' -f 2)
+    #判断系统gcc版本
+    sysversion=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
+    if [ "$sysversion" >= "$gcc_version" ]; then
+        log "系统gcc版本大于等于$gcc_version"
+        return 0
+    fi
+
+
+
     if [ -e "$filename" ]; then
         #log "gcc-13.2.0.tar.gz文件存在"
         GccMd5=$(openssl sha512 gcc-13.2.0.tar.gz | awk '{print $NF}')
@@ -204,27 +214,44 @@ function Install_gcc() {
     else
         wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
     fi
-    #tar -zxvf $filename || return 1
-    unpacked_directory=$(tar -tzf gcc-13.2.0.tar.gz | head -n 1 | cut -f1 -d"/")
-    #log "解压出来的目录是: $unpacked_directory"
+    tar -zxvf $filename || return 1
+    unpacked_directory=$(tar -tzf $filename | head -n 1 | cut -f1 -d"/")
+    log "解压出来的目录是: $unpacked_directory"
+    log "文件名字:$filename"
+
     cd "$unpacked_directory" || return 1
-    #./contrib/download_prerequisites
+    ./contrib/download_prerequisites
     #mkdir build
     install_dir=$(pwd)/build
-    #make distclean
-    #./configure --enable-checking=release \
-    #    --enable-threads=posix \
-    #    --enable-languages=c,c++ \
-    #    --disable-multilib \
-    #    --prefix=$install_dir \
-    #    --program-suffix=-13
+    make distclean
+    ./configure --enable-checking=release \
+        --enable-threads=posix \
+        --enable-languages=c,c++ \
+        --disable-multilib \
+        --prefix=$install_dir \
+        --program-suffix=-$(gcc_version)
 
-    #make -j12
-    #make install
-    echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
-    echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
-    source ~/.bashrc
-    sudo cp 
+    make -j12
+    make install
+
+    # 检查路径是否已经存在于.bashrc中
+    if ! grep -q "$install_dir/bin" ~/.bashrc; then
+        # 追加路径到.bashrc
+        echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
+        echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
+        # 更新当前Shell的PATH
+        export PATH=$PATH:$install_dir/bin
+        log "已将 $install_dir/bin 添加到环境变量"
+    else
+        log "$install_dir/bin 已经存在环境变量"
+    fi
+
+    # 使用readlink命令获取软链接指向的目标
+    stdlib=$(readlink -f "$install_dir/lib64/libstdc++.so")
+    sudo cp $stdlib "/usr/lib/x86_64-linux-gnu"
+    libname=$(basename $stdlib)
+    sudo ln -sf /usr/lib/x86_64-linux-gnu/$libname /usr/lib/x86_64-linux-gnu/libstdc++.so
+    log "$libname已创建软连接"
 }
 
 function Install_gcc13() {
@@ -382,6 +409,13 @@ function main() {
         wrn "安装cmake失败..."
     fi
 
+    Install_gcc
+    if [ $? -eq 0 ]; then
+        log "安装gcc成功..."
+    else
+        wrn "安装gcc失败..."
+    fi
+
     log "一键安装Ubuntu C++环境”脚本执行完毕..."
     exit $EXIT_SUCCESS
 
@@ -397,3 +431,11 @@ function main() {
 #sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 #
 Install_gcc
+
+#gcc_version=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}')
+#
+#substring=$(echo $gcc_version | cut -c 1-2)
+#substring=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
+
+# 输出版本号
+#echo "GCC版本: $substring"
