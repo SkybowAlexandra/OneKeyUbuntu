@@ -188,6 +188,66 @@ function Install_Vimplus() {
 
 }
 
+function Install_gcc2() {
+    sudo apt install build-essential libtool -y
+    # 提取文件名
+    filename=$(basename "$gcc_Repo")
+    gcc_version=$(echo "$filename" | cut -d '.' -f 1 | cut -d '-' -f 2)
+    #判断系统gcc版本
+    sysversion=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
+    if [ "$sysversion" "$gcc_version" ] >=; then
+        log "系统gcc版本大于等于$gcc_version"
+        return 0
+    fi
+    #进入目录
+    cd ~/Softwares || return 1
+    #判断文件是否存在
+    if [ ! -e "$filename" ]; then
+        wget $gcc_Repo
+    else
+        # 校验文件的SHA512
+        GccMd5=$(openssl sha512 "$filename" | awk '{print $NF}')
+        if [ "$GccMd5" != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
+            wrn "gcc-13.2.0.tar.gz文件校验SHA512不通过"
+            rm "$filename"
+            wget $gcc_Repo
+        fi
+    fi
+    tar -zxvf "$filename" || return 1
+    unpacked_directory=$(tar -tzf "$filename" | head -n 1 | cut -f1 -d"/")
+    log "解压出来的目录是: $unpacked_directory"
+    cd "$unpacked_directory" || return 1
+    ./contrib/download_prerequisites
+    install_dir=$(pwd)/build
+    make distclean
+    ./configure --enable-checking=release \
+        --enable-threads=posix \
+        --enable-languages=c,c++ \
+        --disable-multilib \
+        --prefix="$install_dir" \
+        --program-suffix="-$gcc_version"
+
+    make -j12
+    make install
+
+    # 将安装目录添加到PATH
+    if ! grep -q "$install_dir/bin" ~/.bashrc; then
+        echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
+        echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
+        export PATH=$PATH:"$install_dir/bin"
+        log "已将 $install_dir/bin 添加到环境变量"
+    else
+        log "$install_dir/bin 已经存在环境变量"
+    fi
+
+    # 获取软链接指向的目标并复制到系统目录
+    stdlib=$(readlink -f "$install_dir/lib64/libstdc++.so")
+    sudo cp "$stdlib" "/usr/lib/x86_64-linux-gnu"
+    libname=$(basename "$stdlib")
+    sudo ln -sf "/usr/lib/x86_64-linux-gnu/$libname" "/usr/lib/x86_64-linux-gnu/libstdc++.so"
+    log "$libname已创建软连接"
+}
+
 function Install_gcc() {
     sudo apt install build-essential libtool -y
     cd ~/Softwares || return 1
@@ -196,19 +256,17 @@ function Install_gcc() {
     gcc_version=$(echo "$filename" | cut -d '.' -f 1 | cut -d '-' -f 2)
     #判断系统gcc版本
     sysversion=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
-    if [ "$sysversion" >= "$gcc_version" ]; then
+    if [ "$sysversion" "$gcc_version" ] >=; then
         log "系统gcc版本大于等于$gcc_version"
         return 0
     fi
 
-
-
     if [ -e "$filename" ]; then
         #log "gcc-13.2.0.tar.gz文件存在"
-        GccMd5=$(openssl sha512 gcc-13.2.0.tar.gz | awk '{print $NF}')
+        GccMd5=$(openssl sha512 $filename | awk '{print $NF}')
         if [ $GccMd5 != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
             wrn "gcc-13.2.0.tar.gz文件校验SHA512校验不通过"
-            rm gcc-13.2.0.tar.gz
+            rm $filename
             wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
         fi
     else
@@ -430,7 +488,7 @@ function main() {
 #sudo rm -rf libstdc++.so.6
 #sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 #
-Install_gcc
+#Install_gcc
 
 #gcc_version=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}')
 #
@@ -439,3 +497,4 @@ Install_gcc
 
 # 输出版本号
 #echo "GCC版本: $substring"
+Install_gcc2
