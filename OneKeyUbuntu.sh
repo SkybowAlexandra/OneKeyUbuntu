@@ -194,11 +194,16 @@ function Install_gcc2() {
     filename=$(basename "$gcc_Repo")
     gcc_version=$(echo "$filename" | cut -d '.' -f 1 | cut -d '-' -f 2)
     #判断系统gcc版本
-    sysversion=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
-    if [ "$sysversion" "$gcc_version" ] >=; then
+    sysversion=$(gcc --version | head -n 1 | awk '{split($0,str," "); print str[4]}' | cut -c '1-2')
+    log $sysversion
+    
+    if (( $sysversion >= $gcc_version )); then
         log "系统gcc版本大于等于$gcc_version"
         return 0
+    else
+        log "系统gcc版本xiaoyu$gcc_version"
     fi
+    return 0
     #进入目录
     cd ~/Softwares || return 1
     #判断文件是否存在
@@ -213,8 +218,11 @@ function Install_gcc2() {
             wget $gcc_Repo
         fi
     fi
-    tar -zxvf "$filename" || return 1
+
+    tar -zxvf "$filename"
+
     unpacked_directory=$(tar -tzf "$filename" | head -n 1 | cut -f1 -d"/")
+
     log "解压出来的目录是: $unpacked_directory"
     cd "$unpacked_directory" || return 1
     ./contrib/download_prerequisites
@@ -309,6 +317,7 @@ function Install_gcc() {
     sudo cp $stdlib "/usr/lib/x86_64-linux-gnu"
     libname=$(basename $stdlib)
     sudo ln -sf /usr/lib/x86_64-linux-gnu/$libname /usr/lib/x86_64-linux-gnu/libstdc++.so
+
     log "$libname已创建软连接"
 }
 
