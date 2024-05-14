@@ -188,7 +188,7 @@ function Install_Vimplus() {
 
 }
 
-function Install_gcc2() {
+function Install_gcc() {
     sudo apt install build-essential libtool -y
     # 提取文件名
     filename=$(basename "$gcc_Repo")
@@ -199,11 +199,10 @@ function Install_gcc2() {
     
     if (( $sysversion >= $gcc_version )); then
         log "系统gcc版本大于等于$gcc_version"
-        return 0
+        return 1
     else
         log "系统gcc版本xiaoyu$gcc_version"
     fi
-    return 0
     #进入目录
     cd ~/Softwares || return 1
     #判断文件是否存在
@@ -227,16 +226,16 @@ function Install_gcc2() {
     cd "$unpacked_directory" || return 1
     ./contrib/download_prerequisites
     install_dir=$(pwd)/build
-    make distclean
-    ./configure --enable-checking=release \
-        --enable-threads=posix \
-        --enable-languages=c,c++ \
-        --disable-multilib \
-        --prefix="$install_dir" \
-        --program-suffix="-$gcc_version"
-
-    make -j12
-    make install
+    #make distclean
+    #./configure --enable-checking=release \
+    #    --enable-threads=posix \
+    #    --enable-languages=c,c++ \
+    #    --disable-multilib \
+    #    --prefix="$install_dir" \
+    #    --program-suffix="-$gcc_version"
+#
+    #make -j12
+    #make install
 
     # 将安装目录添加到PATH
     if ! grep -q "$install_dir/bin" ~/.bashrc; then
@@ -253,141 +252,8 @@ function Install_gcc2() {
     sudo cp "$stdlib" "/usr/lib/x86_64-linux-gnu"
     libname=$(basename "$stdlib")
     sudo ln -sf "/usr/lib/x86_64-linux-gnu/$libname" "/usr/lib/x86_64-linux-gnu/libstdc++.so"
+    sudo ln -sf "/usr/lib/x86_64-linux-gnu/$libname" "/usr/lib/x86_64-linux-gnu/libstdc++.so.6"
     log "$libname已创建软连接"
-}
-
-function Install_gcc() {
-    sudo apt install build-essential libtool -y
-    cd ~/Softwares || return 1
-    #提取文件名字
-    filename=$(basename "$gcc_Repo")
-    gcc_version=$(echo "$filename" | cut -d '.' -f 1 | cut -d '-' -f 2)
-    #判断系统gcc版本
-    sysversion=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
-    if [ "$sysversion" "$gcc_version" ] >=; then
-        log "系统gcc版本大于等于$gcc_version"
-        return 0
-    fi
-
-    if [ -e "$filename" ]; then
-        #log "gcc-13.2.0.tar.gz文件存在"
-        GccMd5=$(openssl sha512 $filename | awk '{print $NF}')
-        if [ $GccMd5 != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
-            wrn "gcc-13.2.0.tar.gz文件校验SHA512校验不通过"
-            rm $filename
-            wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
-        fi
-    else
-        wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
-    fi
-    tar -zxvf $filename || return 1
-    unpacked_directory=$(tar -tzf $filename | head -n 1 | cut -f1 -d"/")
-    log "解压出来的目录是: $unpacked_directory"
-    log "文件名字:$filename"
-
-    cd "$unpacked_directory" || return 1
-    ./contrib/download_prerequisites
-    #mkdir build
-    install_dir=$(pwd)/build
-    make distclean
-    ./configure --enable-checking=release \
-        --enable-threads=posix \
-        --enable-languages=c,c++ \
-        --disable-multilib \
-        --prefix=$install_dir \
-        --program-suffix=-$(gcc_version)
-
-    make -j12
-    make install
-
-    # 检查路径是否已经存在于.bashrc中
-    if ! grep -q "$install_dir/bin" ~/.bashrc; then
-        # 追加路径到.bashrc
-        echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
-        echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
-        # 更新当前Shell的PATH
-        export PATH=$PATH:$install_dir/bin
-        log "已将 $install_dir/bin 添加到环境变量"
-    else
-        log "$install_dir/bin 已经存在环境变量"
-    fi
-
-    # 使用readlink命令获取软链接指向的目标
-    stdlib=$(readlink -f "$install_dir/lib64/libstdc++.so")
-    sudo cp $stdlib "/usr/lib/x86_64-linux-gnu"
-    libname=$(basename $stdlib)
-    sudo ln -sf /usr/lib/x86_64-linux-gnu/$libname /usr/lib/x86_64-linux-gnu/libstdc++.so
-
-    log "$libname已创建软连接"
-}
-
-function Install_gcc13() {
-
-    while true; do
-
-        #源码构建还是仓库拉取
-        log "是否使用源码构建GCC-13? (y/n)"
-        read -r -p "请输入(y/n): " choice
-        choice=${choice:-"n"}
-        log $choice
-        if [ "$choice" == "y" ] || [ "$choice" == "Y" ]; then
-            log "使用源码构建GCC-13....."
-            sudo apt install build-essential libtool -y
-            cd ~/Softwares || return 1
-            if [ -e "./gcc-13.2.0.tar.gz" ]; then
-                #log "gcc-13.2.0.tar.gz文件存在"
-                Gcc13Md5=$(openssl sha512 gcc-13.2.0.tar.gz | awk '{print $NF}')
-                if [ $Gcc13Md5 != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
-                    wrn "gcc-13.2.0.tar.gz文件校验不通过"
-                    rm gcc-13.2.0.tar.gz
-                    wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
-                fi
-            else
-                log "gcc-13.2.0.tar.gz文件不存在"
-                wget http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz
-            fi
-            tar -zxvf gcc-13.2.0.tar.gz
-            unpacked_directory=$(tar -tzf gcc-13.2.0.tar.gz | head -n 1 | cut -f1 -d"/")
-            log "解压出来的目录是: $unpacked_directory"
-            cd "$unpacked_directory" || return 1
-            #下载依赖
-            ./contrib/download_prerequisites
-            mkdir build
-            install_dir=$(pwd)/build
-            make distclean
-            ./configure --enable-checking=release \
-                --enable-threads=posix \
-                --enable-languages=c,c++ \
-                --disable-multilib \
-                --prefix=$install_dir \
-                --program-suffix=-13
-
-            make -j12
-            make install
-            log $install_dir
-            #添加环境变量
-            echo -e "\n# Adding $install_dir/bin to PATH on $(date)" >>~/.bashrc
-            echo "export PATH=\$PATH:$install_dir/bin" >>~/.bashrc
-            source ~/.bashrc
-            #更新libc++std6
-
-            return 0
-        elif [ "$choice" == "n" ] || "$choice" == "N"; then
-            #log "使用仓库拉取GCC-13..."
-            #sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            #sudo apt-get update
-            #sudo apt install gcc-13 g++-13 -y
-            #if [ $? -ne 0 ]; then
-            #    err "安装gcc-13失败..."
-            #    return 1
-            #fi
-            break
-        else
-            continue
-        fi
-
-    done
-    return 0
 }
 
 function Install_Cmake() {
@@ -489,21 +355,5 @@ function main() {
 }
 
 #main
+Install_gcc
 
-#Install_Cmake
-#Install_gcc13
-
-#sudo cp libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu
-#sudo rm -rf libstdc++.so.6
-#sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.32 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
-#
-#Install_gcc
-
-#gcc_version=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}')
-#
-#substring=$(echo $gcc_version | cut -c 1-2)
-#substring=$(gcc --version | head -n 1 | awk '{split($0,a," "); print a[4]}' | cut -c 1-2)
-
-# 输出版本号
-#echo "GCC版本: $substring"
-Install_gcc2
