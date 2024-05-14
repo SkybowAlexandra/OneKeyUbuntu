@@ -60,7 +60,7 @@ Cmake_Repo="https://github.com/Kitware/CMake.git"
 #gcc 下载链接
 gcc_Repo="http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz"
 
-#安装gcc13需要更新GLIBCXX_3.4.32
+#使用非官方源安装gcc-13
 #sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 #sudo apt-get update
 #sudo apt install gcc-13
