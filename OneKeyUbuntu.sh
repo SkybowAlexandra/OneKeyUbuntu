@@ -226,16 +226,16 @@ function Install_gcc() {
     cd "$unpacked_directory" || return 1
     ./contrib/download_prerequisites
     install_dir=$(pwd)/build
-    #make distclean
-    #./configure --enable-checking=release \
-    #    --enable-threads=posix \
-    #    --enable-languages=c,c++ \
-    #    --disable-multilib \
-    #    --prefix="$install_dir" \
-    #    --program-suffix="-$gcc_version"
-#
-    #make -j12
-    #make install
+    make distclean
+    ./configure --enable-checking=release \
+        --enable-threads=posix \
+        --enable-languages=c,c++ \
+        --disable-multilib \
+        --prefix="$install_dir" \
+        --program-suffix="-$gcc_version"
+
+    make -j12
+    make install
 
     # 将安装目录添加到PATH
     if ! grep -q "$install_dir/bin" ~/.bashrc; then
@@ -354,6 +354,6 @@ function main() {
 
 }
 
-#main
-Install_gcc
+main
+
 
