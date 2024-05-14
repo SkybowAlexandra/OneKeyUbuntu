@@ -53,12 +53,11 @@ Vcpkg_Install_Package=(
 Vcpkg_Repo="https://github.com/microsoft/vcpkg.git"
 #vimplus
 Vimplus_Repo="https://github.com/SkybowAlexandra/vimplus.git"
-
 #cmake 最新版本
 Cmake_Repo="https://github.com/Kitware/CMake.git"
-
 #gcc 下载链接
 gcc_Repo="http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz"
+
 
 #使用非官方源安装gcc-13
 #sudo add-apt-repository ppa:ubuntu-toolchain-r/test
