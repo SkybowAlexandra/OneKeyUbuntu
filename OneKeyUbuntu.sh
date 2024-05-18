@@ -253,6 +253,7 @@ function Install_gcc() {
     sudo ln -sf "/usr/lib/x86_64-linux-gnu/$libname" "/usr/lib/x86_64-linux-gnu/libstdc++.so"
     sudo ln -sf "/usr/lib/x86_64-linux-gnu/$libname" "/usr/lib/x86_64-linux-gnu/libstdc++.so.6"
     log "$libname已创建软连接"
+    return 0
 }
 
 function Install_Cmake() {
@@ -271,7 +272,7 @@ function Install_Cmake() {
     ./configure || return 1
     make -j12
     sudo make install
-
+    return 0;
 }
 
 function cleanup() {
