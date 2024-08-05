@@ -56,7 +56,7 @@ Vimplus_Repo="https://github.com/SkybowAlexandra/vimplus.git"
 #cmake 最新版本
 Cmake_Repo="https://github.com/Kitware/CMake.git"
 #gcc 下载链接
-gcc_Repo="http://ftp.gnu.org/gnu/gcc/gcc-13.2.0/gcc-13.2.0.tar.gz"
+gcc_Repo="http://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz"
 
 
 #使用非官方源安装gcc-13
@@ -200,21 +200,13 @@ function Install_gcc() {
         log "系统gcc版本大于等于$gcc_version"
         return 1
     else
-        log "系统gcc版本xiaoyu$gcc_version"
+        log "系统gcc版本小于$gcc_version"
     fi
     #进入目录
     cd ~/Softwares || return 1
     #判断文件是否存在
     if [ ! -e "$filename" ]; then
         wget $gcc_Repo
-    else
-        # 校验文件的SHA512
-        GccMd5=$(openssl sha512 "$filename" | awk '{print $NF}')
-        if [ "$GccMd5" != "41c8c77ac5c3f77de639c2913a8e4ff424d48858c9575fc318861209467828ccb7e6e5fe3618b42bf3d745be8c7ab4b4e50e424155e691816fa99951a2b870b9" ]; then
-            wrn "gcc-13.2.0.tar.gz文件校验SHA512不通过"
-            rm "$filename"
-            wget $gcc_Repo
-        fi
     fi
 
     tar -zxvf "$filename"
